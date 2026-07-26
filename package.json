@@ -1,12 +1,12 @@
 {
   "name": "persona-distill",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "OpenClaw / Agent Skill: distill someone's chat style into a loadable persona config so an agent can mimic their voice. Standalone, no other-skill dependency.",
   "license": "MIT",
   "author": "2100chen <1326604684@qq.com>",
   "keywords": [
     "openclaw", "agent-skill", "skill", "persona", "distill",
-    "style-transfer", "glm", "chat-style", "agent"
+    "style-transfer", "glm", "chat-style", "wechat", "agent"
   ],
   "repository": {
     "type": "git",
