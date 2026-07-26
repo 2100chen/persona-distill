@@ -2,7 +2,7 @@
 
 > OpenClaw / Agent Skill · 人物风格蒸馏复刻
 
-导入某人的**真实聊天记录**（txt 或 JSON），蒸馏其语言风格、口头禅、回复逻辑、语气、行事偏好，生成一份标准化「人格配置」，让 agent 用此人的口吻对话。支持多人物保存与一键切换。
+导入某人的**真实聊天记录**（**微信导出目录** / txt / JSON），蒸馏其语言风格、口头禅、回复逻辑、语气、行事偏好，生成一份标准化「人格配置」，让 agent 用此人的口吻对话。支持多人物保存与一键切换。**最简用法：把微信导出的聊天记录文件夹路径丢给脚本，自动发现会话、锁定对方、蒸馏风格。**
 
 **不调用任何模型 API，零第三方依赖。** 脚本只做解析+统计；蒸馏由 OpenClaw agent（自带模型）按 SKILL.md 完成。
 
@@ -11,7 +11,7 @@
 ## 它怎么工作
 
 ```
-聊天记录 (txt/json)
+聊天记录 (微信导出目录 / txt / json)
     │  distill.py（纯标准库，不调模型）
     ▼
 data/raw/<name>.json  （目标人物消息 + 高频词/emoji/问句统计）
@@ -20,7 +20,7 @@ data/raw/<name>.json  （目标人物消息 + 高频词/emoji/问句统计）
 data/personas/<name>.md  （标准化人格配置）→ switch_persona 激活 → agent 采用此口吻
 ```
 
-- **distill.py**：解析聊天记录（txt 时间戳/行内 + JSON 多 schema），过滤目标人物，统计特征，输出结构化 JSON。**纯 Python 标准库，不调任何 API。**
+- **distill.py**：解析聊天记录（**微信导出目录**直读 / txt 时间戳/行内 + JSON 多 schema），过滤目标人物，统计特征，输出结构化 JSON。**纯 Python 标准库，不调任何 API。**
 - **agent 蒸馏**：OpenClaw agent 读取 JSON，用自己的模型按 SKILL.md 里的 11 维规范提炼人格画像，填模板生成 persona.md。
 
 ## 与同类项目对比
@@ -36,6 +36,7 @@ data/personas/<name>.md  （标准化人格配置）→ switch_persona 激活 �
 
 ## 功能特性
 
+- **微信导出目录直读（推荐）**：指向 WeChatDataAnalysis 等导出的文件夹即可，自动发现 `conversations/*/messages.json`，单聊自动锁定对方（`isSent=false`），零参数
 - **多格式聊天记录**：txt（时间戳 / `昵称: 内容`）+ JSON（WeChatMsg/留痕/QQ exporter 多 schema 自动识别）；UTF-8/GBK 自动识别
 - **11 维度人格画像**：语言风格、口头禅、句式、语气情绪、回复逻辑、标点 emoji、开场收尾、价值观/雷区、风格锚点（逐字原话）、Do/Don't、诚实边界
 - **有据可查**：口头禅与锚点逐字引用自真实记录，不编造；高频词统计交叉佐证
@@ -60,20 +61,41 @@ git clone https://github.com/2100chen/persona-distill.git
 
 ## 用法
 
+### 标准聊天记录目录（微信导出，推荐）
+
+WeChatDataAnalysis 等导出工具产出的标准目录，`distill.py` 直接读取——**指向文件夹即可**：
+
+```
+<聊天记录根目录>/
+├── manifest.json            # account(本人wxid) / exportedAt / stats
+├── conversations/
+│   └── <NNNN>_<显示名>_<wxid>_<hash>/
+│       ├── meta.json        # username(对方wxid) / displayName / isGroup / messageCount
+│       └── messages.json    # messages[]：isSent / senderDisplayName / content / renderType
+└── media/{avatars,emojis}/
+```
+
+**对方消息 `isSent==false`，本人 `isSent==true`**。单聊目录脚本自动锁定对方，无需任何参数。
+
 ### 在 OpenClaw 里（推荐）
 
-对 agent 说「蒸馏老王的聊天风格」→ agent 自动：
-1. 跑 `distill.py` 解析记录、输出 `data/raw/<name>.json`
+对 agent 说「**用 `E:\xxx\蛋仔的聊天记录` 这个文件夹蒸馏蛋仔的风格**」→ agent 自动：
+1. 跑 `distill.py <目录>`：自动发现会话、锁定对方、输出 `data/raw/<name>.json`
 2. 读取 JSON，按 SKILL.md 蒸馏 11 维度，生成 `data/personas/<name>.md`
 3. 回报画像给你确认，可选激活
 
 ### 命令行（独立使用）
 
 ```bash
-# 1. 提取数据（不调模型）
-python scripts/distill.py <聊天记录文件> --name <英文标识> --alias <记录里的昵称>
+# 微信导出目录（推荐）——一行搞定：自动发现会话、锁定对方
+python scripts/distill.py "E:\xxx\蛋仔的聊天记录" --name danzai
+# 不传 --name 也行：按对方昵称自动命名（如 蛋仔大王.json）
+# 多会话目录：加 --conv <序号|昵称|wxid>；群聊：加 --alias <发言者昵称>
 
-# 2. 把 data/raw/<name>.json 喂给你自己的 LLM，按 SKILL.md 的蒸馏规范生成 persona.md
+# 单个 txt/json 文件（向后兼容）
+python scripts/distill.py 聊天.txt --name laowan --alias 老王
+
+# 第 2 步：把 data/raw/<name>.json 喂给你自己的 LLM，按 SKILL.md 蒸馏规范生成 persona.md
 ```
 
 ### 切换 / 列出人格
