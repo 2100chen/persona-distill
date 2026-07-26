@@ -21,6 +21,23 @@
 
 脚本自动识别下列格式（UTF-8 优先，回退 GBK）：
 
+**E. 微信导出目录（推荐，WeChatDataAnalysis 等导出的整个文件夹）**
+
+把目录路径直接传给 `distill.py`，脚本读 `manifest.json` + `conversations/*/messages.json`：
+
+```
+<聊天记录根目录>/
+├── manifest.json            # account(本人wxid) / stats
+├── conversations/<NNNN>_<显示名>_<wxid>_<hash>/
+│   ├── meta.json            # username(对方wxid) / displayName / isGroup / messageCount
+│   └── messages.json        # messages[]：isSent / senderDisplayName / content / renderType
+└── media/{avatars,emojis}/
+```
+
+- 对方消息 `isSent==false`，本人 `isSent==true`。**单聊**：脚本自动取对方文本（`renderType=="text"` 且 `isSent==false`），零参数；默认 `--name` 由对方昵称派生。
+- **多会话**：脚本列出所有会话，用 `--conv <序号|显示名片段|wxid>` 选一个。
+- **群聊**：用 `--alias <发言者昵称>` 指定蒸馏谁（否则取最活跃发言者）。
+
 **A. 微信/QQ 导出（带时间戳，消息可能跨多行）**
 ```
 2024-03-01 10:23:45 张三
@@ -47,8 +64,9 @@
 李四: 说
 ```
 
-识别逻辑：先匹配时间戳行（提取说话人），否则匹配 `昵称: 内容`。
-若 `--alias` 未指定，脚本默认取**出现最多的说话人**并打印 Top5 供核对。
+识别逻辑：
+- **目录输入**：见上方 E，按 `isSent` / `senderDisplayName` 定位目标人。
+- **文件输入**：先匹配时间戳行（提取说话人），否则匹配 `昵称: 内容`；若 `--alias` 未指定，脚本默认取**出现最多的说话人**并打印 Top5 供核对。
 
 ## 调优技巧
 
