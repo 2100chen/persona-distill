@@ -1,0 +1,2 @@
+# persona-distill 无第三方依赖，纯 Python 标准库（Python 3.10+）
+# distill.py 只做解析+统计，不调用任何模型 API；蒸馏由 OpenClaw agent（自带模型）完成。
